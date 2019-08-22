@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 import logging
 import os
 from websocket_server import WebsocketServer
@@ -64,17 +66,22 @@ def predict_pos_neg(model, review):
     else:
         return "[{}]는 {:.2f}% 확률로 부정 리뷰이지 않을까 추측해봅니다.^^;\n".format(review, (1 - score) * 100)
 
+def solve_encoding(string):
+    return string.encode('raw_unicode_escape').decode('utf-8')
 
 def on_connect(client, server):
     server.send_message(client, "You are connected to python server")
 
 
 def on_message(client, server, message):
+    solved_message = message
+    # 혹시 글자가 깨지면 아래 주석 해제
+    # solved_message = solve_encoding(message)
     loaded_model = load_model()
-    predict = predict_pos_neg(loaded_model, message)
+    predict = predict_pos_neg(loaded_model, solved_message)
     server.send_message(client, predict)
 
-ws_server = WebsocketServer(80, host='0.0.0.0', loglevel=logging.INFO)
+ws_server = WebsocketServer(80, host='0.0.0.0')
 ws_server.set_fn_new_client(on_connect)
 ws_server.set_fn_message_received(on_message)
 ws_server.run_forever()
